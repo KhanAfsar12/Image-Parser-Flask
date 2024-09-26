@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Questions Table</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2 class="text-center mb-4">Questions List</h2>
+        <table class="table table-bordered table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Previous Year</th>
+                    <th>Level</th>
+                    <th>Question</th>
+                    <th>Option 1</th>
+                    <th>Option 2</th>
+                    <th>Option 3</th>
+                    <th>Option 4</th>
+                    <th>Explanation</th>
+                    <th>Answer</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for question in questions %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ question.previous_year }}</td>
+                    <td>{{ question.level }}</td>
+                    <td>
+                        {% if question.question_image %}
+                            <img src="{{question.question_image }}"  width="100" height="100" style="object-fit: cover;">
+                        {% else %}
+                        {{ question.question_text }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if question.option1_image %}
+                        <img src="{{question.option1_image }}"  width="100" height="100" style="object-fit: cover;">
+                        {% else %}
+                        {{ question.option1_text }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if question.option2_image %}
+                        <img src="{{question.option2_image }}"  width="100" height="100" style="object-fit: cover;">
+                        {% else %}
+                        {{ question.option2_text }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if question.option3_image %}
+                        <img src="{{question.option3_image }}"  width="100" height="100" style="object-fit: cover;">
+                        {% else %}
+                        {{ question.option3_text }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if question.option4_image %}
+                        <img src="{{question.option4_image }}"  width="100" height="100" style="object-fit: cover;">
+                        {% else %}
+                        {{ question.option4_text }}
+                        {% endif %}
+                    </td>
+                    <td>{{ question.explanation }}</td>
+                    <td>{{ question.answer }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
