@@ -6,7 +6,6 @@ from werkzeug.utils import secure_filename
 from openpyxl.drawing.image import Image as OpenpyxlImage
 from flask import Flask, request, render_template, flash, redirect, url_for
 
-
 app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///questions.db'
@@ -36,9 +35,6 @@ class Question(db.Model):
 with app.app_context():
     db.create_all()
 
-
-
-
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
@@ -55,52 +51,50 @@ def upload_file():
 
     return render_template('upload.html')
 
+def save_image_from_excel(image, folder, image_name):
+    if image:
+        folder_path = os.path.join(app.config['UPLOAD_FOLDER'], folder)
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+        
+        image_extension = image.path.split('.')[-1] 
+        image_path = os.path.join(folder_path, f"{image_name}.{image_extension}")
+        
+        with open(image_path, 'wb') as img_file:
+            img_file.write(image._data()) 
 
-
-
-def save_image_from_excel(img, folder, image_name):
-    if img:
-        image_path = os.path.join(app.config['UPLOAD_FOLDER'], folder)
-        if not os.path.exists(image_path):
-            os.makedirs(image_path)
-
-        image_file_path = os.path.join(image_path, f"{image_name}.png")
-
-        with open(image_file_path, 'wb') as f:
-            f.write(img._data()) 
-
-        return image_file_path
+        return f'uploads/{folder}/{image_name}.{image_extension}'
     return None
 
+    
 
 def import_from_excel(file_path):
     wb = load_workbook(filename=file_path)
     sheet = wb.active
 
-    for i, row in enumerate(sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=False), start=1):
-        previous_year = row[0].value
-        level = row[1].value
-        question_text = row[2].value
-        explanation = row[7].value
-        answer = row[8].value
-
+    for i, row in enumerate(sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=False), start=2):
+        previous_year = row[0].value  
+        level = row[1].value         
+        explanation = row[12].value   
+        answer = row[13].value       
+        
         question_image = None
+        option1_image, option2_image, option3_image, option4_image = None, None, None, None
+
         if sheet._images:
             for image in sheet._images:
-                if image.anchor._from.row == i and image.anchor._from.col == 2:
-                    question_image = image
-
-        option1_image, option2_image, option3_image, option4_image = None, None, None, None
-        for image in sheet._images:
-            if image.anchor._from.row == i:
-                if image.anchor._from.col == 3:
-                    option1_image = image
-                elif image.anchor._from.col == 4: 
-                    option2_image = image
-                elif image.anchor._from.col == 5: 
-                    option3_image = image
-                elif image.anchor._from.col == 6:
-                    option4_image = image
+                if image.anchor._from.row == i: 
+                    col_idx = image.anchor._from.col
+                    if col_idx == 2: 
+                        question_image = image
+                    elif col_idx == 4: 
+                        option1_image = image
+                    elif col_idx == 6: 
+                        option2_image = image
+                    elif col_idx == 8:  
+                        option3_image = image
+                    elif col_idx == 10:  
+                        option4_image = image
 
         question_image_path = save_image_from_excel(question_image, 'questions', f'question_{i}')
         option1_image_path = save_image_from_excel(option1_image, 'options', f'option1_{i}')
@@ -111,22 +105,23 @@ def import_from_excel(file_path):
         question = Question(
             previous_year=previous_year,
             level=level,
-            question_text=question_text if isinstance(question_text, str) else None,
             question_image=question_image_path,
-            option1_text=row[3].value if isinstance(row[3].value, str) else None,
+            question_text=row[3].value if isinstance(row[3].value, str) else None, 
             option1_image=option1_image_path,
-            option2_text=row[4].value if isinstance(row[4].value, str) else None,
+            option1_text=row[5].value if isinstance(row[5].value, str) else None, 
             option2_image=option2_image_path,
-            option3_text=row[5].value if isinstance(row[5].value, str) else None,
+            option2_text=row[7].value if isinstance(row[7].value, str) else None, 
             option3_image=option3_image_path,
-            option4_text=row[6].value if isinstance(row[6].value, str) else None,
+            option3_text=row[9].value if isinstance(row[9].value, str) else None, 
             option4_image=option4_image_path,
+            option4_text=row[11].value if isinstance(row[11].value, str) else None, 
             explanation=explanation,
             answer=answer
         )
         db.session.add(question)
-
     db.session.commit()
+
+
 
 
 
@@ -134,11 +129,7 @@ def import_from_excel(file_path):
 @app.route('/questions')
 def display():
     questions = Question.query.all()
-    for question in questions:
-        if question.question_image:
-            print(question.question_image)
-    return render_template('questions.html', questions = questions)
-
+    return render_template('questions.html', questions=questions)
 
 if __name__ == "__main__":
     app.run(debug=True)
