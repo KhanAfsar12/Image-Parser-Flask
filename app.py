@@ -72,55 +72,60 @@ def import_from_excel(file_path):
     wb = load_workbook(filename=file_path)
     sheet = wb.active
 
+    images_by_row = {image.anchor._from.row + 1: image for image in sheet._images}
+
     for i, row in enumerate(sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=False), start=2):
-        previous_year = row[0].value  
-        level = row[1].value         
-        explanation = row[12].value   
-        answer = row[13].value       
-        
-        question_image = None
-        option1_image, option2_image, option3_image, option4_image = None, None, None, None
+        previous_year = row[0].value
+        level = row[1].value
 
-        if sheet._images:
-            for image in sheet._images:
-                if image.anchor._from.row == i: 
-                    col_idx = image.anchor._from.col
-                    if col_idx == 2: 
-                        question_image = image
-                    elif col_idx == 4: 
-                        option1_image = image
-                    elif col_idx == 6: 
-                        option2_image = image
-                    elif col_idx == 8:  
-                        option3_image = image
-                    elif col_idx == 10:  
-                        option4_image = image
+        question_text = row[2].value if isinstance(row[2].value, str) else None
+        option1_text = row[3].value if isinstance(row[3].value, str) else None
+        option2_text = row[4].value if isinstance(row[4].value, str) else None
+        option3_text = row[5].value if isinstance(row[5].value, str) else None
+        option4_text = row[6].value if isinstance(row[6].value, str) else None
+        explanation = row[7].value
+        answer = row[8].value
 
-        question_image_path = save_image_from_excel(question_image, 'questions', f'question_{i}')
-        option1_image_path = save_image_from_excel(option1_image, 'options', f'option1_{i}')
-        option2_image_path = save_image_from_excel(option2_image, 'options', f'option2_{i}')
-        option3_image_path = save_image_from_excel(option3_image, 'options', f'option3_{i}')
-        option4_image_path = save_image_from_excel(option4_image, 'options', f'option4_{i}')
+        question_image_path = None
+        option1_image_path = None
+        option2_image_path = None
+        option3_image_path = None
+        option4_image_path = None
+
+        if i in images_by_row:
+            image = images_by_row[i]
+            col_idx = image.anchor._from.col
+
+            if col_idx == 2: 
+                question_image_path = save_image_from_excel(image, 'questions', f'question_{i}')
+            elif col_idx == 3:  
+                option1_image_path = save_image_from_excel(image, 'options', f'option1_{i}')
+            elif col_idx == 4: 
+                option2_image_path = save_image_from_excel(image, 'options', f'option2_{i}')
+            elif col_idx == 5:  
+                option3_image_path = save_image_from_excel(image, 'options', f'option3_{i}')
+            elif col_idx == 6:  
+                option4_image_path = save_image_from_excel(image, 'options', f'option4_{i}')
 
         question = Question(
             previous_year=previous_year,
             level=level,
+            question_text=question_text,
             question_image=question_image_path,
-            question_text=row[3].value if isinstance(row[3].value, str) else None, 
+            option1_text=option1_text,
             option1_image=option1_image_path,
-            option1_text=row[5].value if isinstance(row[5].value, str) else None, 
+            option2_text=option2_text,
             option2_image=option2_image_path,
-            option2_text=row[7].value if isinstance(row[7].value, str) else None, 
+            option3_text=option3_text,
             option3_image=option3_image_path,
-            option3_text=row[9].value if isinstance(row[9].value, str) else None, 
+            option4_text=option4_text,
             option4_image=option4_image_path,
-            option4_text=row[11].value if isinstance(row[11].value, str) else None, 
             explanation=explanation,
             answer=answer
         )
         db.session.add(question)
-    db.session.commit()
 
+    db.session.commit()
 
 
 
